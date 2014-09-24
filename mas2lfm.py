@@ -32,12 +32,16 @@ from scipy import interpolate
 import time
 
 
-if masTimeLabel=='all':
+if params['masTimeLabel']=='all':
     timeLabels = [int(os.path.basename(s).split('.')[0][-3:]) for s in sorted(glob.glob(os.path.join(masdir,'rho*.hdf')))]
 else:
-    masTimeLabel = int(masTimeLabel)
+    masTimeLabel = int(params['masTimeLabel'])
     timeLabels = [masTimeLabel]
     initLFMfile = fileName
+
+
+import sys
+sys.exit(0)
 
 vars={}
 vars['mas']={}

@@ -1,76 +1,30 @@
-########################################################################
-# 5/29/2014
-# Note the lines that start with #### CHANGES mark below.
-# I changed the interpolation from (phi,theta) into (phi,-cos(theta)) space
-# This seems to produce identical results to the previous results.
-# See the correponding evernote note.
-########################################################################
+"""
+This script is adapted from ~/work/LFM-helio_2.0/mascme2lfm_helio_coronal_interp.py.
+Here I'm going to try to keep things clean and modular.
+"""
+#----------- PARSE ARGUMENTS ---------#
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('ConfigFileName',help='The name of the configuration file to use',default='startup.config')
+args = parser.parse_args()
+#----------- PARSE ARGUMENTS ---------#
 
+# Read params from config file
+import mas2lfm
+import mas2lfm.util
+params = mas2lfm.util.configDict(args.ConfigFileName)
 
-
-def sph2cart(a,theta,phi):
-    ar,at,ap = a
-
-    ax = ar*cos(phi)*sin(theta)+at*cos(phi)*cos(theta)-ap*sin(phi)
-    ay = ar*sin(phi)*sin(theta)+at*sin(phi)*cos(theta)+ap*cos(phi)
-    az = ar*cos(theta)-at*sin(theta)
-
-    return(ax,ay,az)
-
-def radial_interp(vars_from,var_name,radii_to,coef_label='r_interp_coefs',ind_label='r_interp_above_ind'):
-    q=[]
-    ind=[]
-    for r_to in radii_to:    # interpolating to LFM cell centers
-        r_from = vars_from[var_name]['r']
-        ind_r_a = flatnonzero(r_from>=r_to)[0]     # MAS radius above
-        r_a = r_from[ind_r_a]
-        r_b = r_from[ind_r_a-1]
-        q.append( (r_a-r_to)/(r_a-r_b) )
-        ind.append(ind_r_a)
-        
-    vars_from[var_name][coef_label]=asarray(q,dtype='float')
-    vars_from[var_name][ind_label]=asarray(ind,dtype='int')
-
-
-
-
-
-dumpInit = False
-dumpBC   = True
-
-
-
-
-import ConfigParser
-config = ConfigParser.ConfigParser()
-config.read('startup.config')
-
-ni = config.getint('Dimensions','NI')
-nj = config.getint('Dimensions','NJ')
-nk = config.getint('Dimensions','NK')
-fileName = config.get('OutputFileName','Prefix')+'_%dx%dx%d_mhd_0000000.hdf'%(ni,nj,nk)
-
-scale = config.getfloat('Normalization','Xscale')
-rmin = config.getfloat('GridSpecs','RMIN')
-rmax = config.getfloat('GridSpecs','RMAX')
-thetamin = config.getfloat('GridSpecs','THETAMIN')
-
-gamma = config.getfloat('Constants','gamma')
-NO2   = config.getint('Constants','NO2')
-Tsolar = config.getfloat('Constants','Tsolar')
-
-masdir = config.get('MAS','masdir')
-masTimeLabel = config.get('MAS','masTimeLabel')
-masFrame = config.get('MAS','masFrame')
-masFakeRotation = config.getboolean('MAS','masFakeRotation')
-
+# Pretty print config parameters
+import pprint
+print('=============================\n Configuration parameters \n=============================')
+pprint.pprint(params)
+print('=============================\n Configuration parameters \n=============================')
 
 
 
 
 
 import os,sys,glob
-from pyhdf.SD import SD, SDC
 import mas
 from numpy import linspace,pi,meshgrid,sin,cos,zeros,ones,dstack,diff,sqrt,array,savetxt,flatnonzero,insert,asarray,zeros_like
 import lfmpy

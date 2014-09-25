@@ -2,6 +2,16 @@
 This script is adapted from ~/work/LFM-helio_2.0/mascme2lfm_helio_coronal_interp.py.
 Here I'm going to try to keep things clean and modular.
 """
+
+import os,sys,glob
+import mas
+from numpy import linspace,pi,meshgrid,sin,cos,zeros,ones,dstack,diff,sqrt,array,savetxt,flatnonzero,insert,asarray,zeros_like
+from scipy import interpolate
+import time
+import pyLTR
+import mas2lfm
+
+
 #----------- PARSE ARGUMENTS ---------#
 import argparse
 parser = argparse.ArgumentParser()
@@ -10,38 +20,16 @@ args = parser.parse_args()
 #----------- PARSE ARGUMENTS ---------#
 
 # Read params from config file
-import mas2lfm
-import mas2lfm.util
-params = mas2lfm.util.configDict(args.ConfigFileName)
-
-# Pretty print config parameters
-import pprint
-print('=============================\n Configuration parameters \n=============================')
-pprint.pprint(params)
-print('=============================\n Configuration parameters \n=============================')
+prm = mas2lfm.params.params(args.ConfigFileName)
+(ni,nj,nk) = (prm.ni,prm.nj,prm.nk)
 
 
-
-
-
-import os,sys,glob
-import mas
-from numpy import linspace,pi,meshgrid,sin,cos,zeros,ones,dstack,diff,sqrt,array,savetxt,flatnonzero,insert,asarray,zeros_like
-import lfmpy
-from scipy import interpolate
-import time
-
-
-if params['masTimeLabel']=='all':
-    timeLabels = [int(os.path.basename(s).split('.')[0][-3:]) for s in sorted(glob.glob(os.path.join(masdir,'rho*.hdf')))]
+if prm.masTimeLabel=='all':
+    timeLabels = [int(os.path.basename(s).split('.')[0][-3:]) for s in sorted(glob.glob(os.path.join(prm.masdir,'rho*.hdf')))]
 else:
-    masTimeLabel = int(params['masTimeLabel'])
+    masTimeLabel = int(prm.masTimeLabel)
     timeLabels = [masTimeLabel]
-    initLFMfile = fileName
 
-
-import sys
-sys.exit(0)
 
 vars={}
 vars['mas']={}
@@ -53,25 +41,16 @@ for var_name in mas_var_names: vars['mas'][var_name]={}
 
 
 for timeLabel in timeLabels:
-    print(timeLabel)
+    print('MAS time label: %d'%timeLabel)
     ######## READ IN MAS DATA #####################
     for var_name,var_unit in zip(mas_var_names,mas_var_units):
         (vars['mas'][var_name]['phi'],
          vars['mas'][var_name]['theta'],
          vars['mas'][var_name]['r'],
-         vars['mas'][var_name]['data']) = mas.read_var(os.path.join(masdir,var_name+'%03d.hdf'%timeLabel),var_unit)
-
-    # p_t,t_t,r_t,temp_mas      = mas.read_var(os.path.join(masdir,'t%03d.hdf'%timeLabel),'temperature')
-    # p_rho,t_rho,r_rho,rho_mas = mas.read_var(os.path.join(masdir,'rho%03d.hdf'%timeLabel),'mass density')
-    # p_vr,t_vr,r_vr,vr_mas     = mas.read_var(os.path.join(masdir,'vr%03d.hdf'%timeLabel),'velocity')
-    # p_vt,t_vt,r_vt,vt_mas     = mas.read_var(os.path.join(masdir,'vt%03d.hdf'%timeLabel),'velocity')    
-    # p_vp,t_vp,r_vp,vp_mas     = mas.read_var(os.path.join(masdir,'vp%03d.hdf'%timeLabel),'velocity')    
-    # p_br,t_br,r_br,br_mas     = mas.read_var(os.path.join(masdir,'br%03d.hdf'%timeLabel),'magnetic field')
-    # p_bt,t_bt,r_bt,bt_mas     = mas.read_var(os.path.join(masdir,'bt%03d.hdf'%timeLabel),'magnetic field')    
-    # p_bp,t_bp,r_bp,bp_mas     = mas.read_var(os.path.join(masdir,'bp%03d.hdf'%timeLabel),'magnetic field')    
+         vars['mas'][var_name]['data']) = mas.read_var(os.path.join(prm.masdir,var_name+'%03d.hdf'%timeLabel),var_unit)
 
 
-    # We only assum here that the LFM bottom boundary coincides with the shell where MAS br is defined. 
+    # We only assume here that the LFM bottom boundary coincides with the shell where MAS br is defined. 
     # We don't have to do this: could define rmin arbitrarily and then linearly interpolate.
     #
     # Do it only for the first MAS file. If we did not have to find rmin here,
@@ -79,62 +58,71 @@ for timeLabel in timeLabels:
 
     if timeLabel == timeLabels[0]:
 
-        # transform the azimuthal velocity to inertial frame
-        R,T=meshgrid(vars['mas']['vp']['r'],vars['mas']['vp']['theta'])
-        # using numpy broadcasting here
-        Vphi_solar = 2*pi/(Tsolar*24.*3600./mas.time_unit())*R*sin(T)*481.3711*1.e5
+        if prm.masFrame=='rotating':
+            # transform the azimuthal velocity to inertial frame
+            R,T=meshgrid(vars['mas']['vp']['r'],vars['mas']['vp']['theta'])
+            # using numpy broadcasting here
+            Vphi_solar = 2*pi/(prm.Tsolar*24.*3600./mas.time_unit())*R*sin(T)*481.3711*1.e5 #!!!!!!!! Fix me. Units hard coded.
 
 
-        # Bottom of the LFM grid
-        r_t = vars['mas']['t']['r']
-        rmind = flatnonzero(r_t>=rmin)[0]-1
-        rmin = r_t[rmind]
+        # Bottom of the LFM grid. NB we only use prm.rmin here
+        # to get the vicinity of the grid. The actual boundary (rmin
+        # variable is computed from the MAS grid)
+        r_br = vars['mas']['br']['r']
+        rmind = flatnonzero(r_br>=prm.rmin*prm.scale)[0]-1
+        rmin = r_br[rmind]
+
 
         # LFM GRID
-        grid = lfmpy.grids((ni,nj,nk))
-        (P,T,R,Pc,Tc,Rc,x,y,z,xc,yc,zc) = grid.getGrid(rmin=rmin*scale,rmax=rmax*scale,thetamin=thetamin)
+        sg = pyLTR.Grids.SphereGrid((ni,nj,nk))
+        (P,T,R) = sg.ptrCorner(rmin=rmin,rmax=prm.rmax*prm.scale,thetamin=prm.thetamin)
+        (Pc,Tc,Rc) = sg.ptrCenter()
+        (x,y,z) = sg.xyzCorner()
+        (xc,yc,zc) = sg.xyzCenter()
 
         # ghost cell coordinates
-        (xg,yg,zg,xcg,ycg,zcg) = [2*arr[:,:,[0]]-arr[:,:,1:NO2+1] for arr in (x,y,z,xc,yc,zc)]
+        (xg,yg,zg,xcg,ycg,zcg) = [2*arr[:,:,[0]]-arr[:,:,1:prm.NO2+1] for arr in (x,y,z,xc,yc,zc)]
         # Here we assume grid radii don't vary with theta and phi, at least in the ghost region
-        rcg = sqrt(xcg[0,0,:]**2+ycg[0,0,:]**2+zcg[0,0,:]**2)/scale
-        rg = sqrt(xg[0,0,:]**2+yg[0,0,:]**2+zg[0,0,:]**2)/scale
+        rcg = sqrt(xcg[0,0,:]**2+ycg[0,0,:]**2+zcg[0,0,:]**2)
+        rg = sqrt(xg[0,0,:]**2+yg[0,0,:]**2+zg[0,0,:]**2)
 
 
         # interpolate in radius (get coefficients here)
         for var_name in mas_var_names:
-            radial_interp(vars['mas'],var_name,rcg)
+            mas2lfm.util.radial_interp(vars['mas'],var_name,rcg)
 
-        # we also need to interpolate br to i-faces
+        # we also need to interpolate br to i-faces !!! 092514 VGM:
+        #                                               no, we don't, since LFM bottom coincides
+        #                                               with spherical shell where MAS Br is defined
         # radial_interp(vars['mas'],'br',rg,'r_interp_coefs_iface','r_interp_above_ind_iface')
-    if masFrame=='rotating': 
-        vars['mas']['vp']['data']+=Vphi_solar
 
-    if dumpInit:
-        br_mas = vars['mas']['br']['data']
-        p_br   = vars['mas']['br']['phi']
-        t_br   = vars['mas']['br']['theta']
-        br = br_mas[:,:,rmind]
-#### CHANGES
-        fbi      = interpolate.RectBivariateSpline(p_br,t_br,br,kx=1,ky=1)  
-#        fbi      = interpolate.RectBivariateSpline(p_br,-cos(t_br),br,kx=1,ky=1)  
 
-        ###############################################
-        with lfmpy.startup(os.path.join(masdir,initLFMfile),(ni,nj,nk)) as lfmh:
-#### CHANGES
+        if prm.dumpInit:
+            # make some aliases for simplicity
+            br_mas = vars['mas']['br']['data']
+            p_br   = vars['mas']['br']['phi']
+            t_br   = vars['mas']['br']['theta']
+            br = br_mas[:,:,rmind]
+        
+            fbi      = interpolate.RectBivariateSpline(p_br,t_br,br,kx=1,ky=1)  
+            #        fbi      = interpolate.RectBivariateSpline(p_br,-cos(t_br),br,kx=1,ky=1)  # doing the same on -cos(theta) x phi grid.
+            ###############################################
+
+            lfmh = pyLTR.Tools.lfmstartup.lfmstartup(os.path.join(prm.dirInitLFMfile,prm.initLFMfile),(ni,nj,nk))
+            lfmh.open()
             bi_lfm = fbi(Pc[:,0,0],Tc[0,:,0])
-#            bi_lfm = fbi(Pc[:,0,0],-cos(Tc[0,:,0]))
-            
+            #            bi_lfm = fbi(Pc[:,0,0],-cos(Tc[0,:,0]))
+                
             # Set variables
-            lfmh.setVar('X_grid',x)
-            lfmh.setVar('Y_grid',y)
-            lfmh.setVar('Z_grid',z)
-            
-            lfmh.setVar('rho_',400.*1.67e-24*ones((nk+1,nj+1,ni+1)))
-            lfmh.setVar('c_',  5.e6*ones((nk+1,nj+1,ni+1)))
-            lfmh.setVar('vx_',4.e7*sin(Tc)*cos(Pc))
-            lfmh.setVar('vy_',4.e7*sin(Tc)*sin(Pc))
-            lfmh.setVar('vz_',4.e7*cos(Tc))
+            lfmh.writeVar('X_grid',x)
+            lfmh.writeVar('Y_grid',y)
+            lfmh.writeVar('Z_grid',z)
+                
+            lfmh.writeVar('rho_',400.*1.67e-24*ones((nk+1,nj+1,ni+1)))
+            lfmh.writeVar('c_',  5.e6*ones((nk+1,nj+1,ni+1)))
+            lfmh.writeVar('vx_',4.e7*sin(Tc)*cos(Pc))
+            lfmh.writeVar('vy_',4.e7*sin(Tc)*sin(Pc))
+            lfmh.writeVar('vz_',4.e7*cos(Tc))
 
             tmp    = diff(T[:,:,0],axis=1)
             dtheta = 0.5*(tmp[:-1,:]+tmp[1:,:])
@@ -142,13 +130,20 @@ for timeLabel in timeLabels:
             dphi   = 0.5*(tmp[:,:-1]+tmp[:,1:])
 
             # note the fancy dstack to fill in the last i-face with correct bi values
-            bi = dstack(R.shape[2]*[bi_lfm*(rmin*scale)**2*sin(Tc[:,:,0])*dtheta*dphi])
-            lfmh.setVar('bi_',bi)
+            bi = dstack(R.shape[2]*[bi_lfm*rmin**2*sin(Tc[:,:,0])*dtheta*dphi])
+            lfmh.writeVar('bi_',bi)
+            lfmh.close()
 
-
+        ### End of stuff done on first iteration only
     # dump cr.bc
-    if dumpBC:
+    if prm.dumpBC:
+        if prm.masFrame=='rotating': 
+            vars['mas']['vp']['data']+=Vphi_solar
+
+
         vars['lfm']={}
+
+        # some aliases
         for var_name in mas_var_names:
             var = vars['mas'][var_name]['data']
             r  = vars['mas'][var_name]['r']
@@ -162,10 +157,11 @@ for timeLabel in timeLabels:
 
             # now bilinear interpolation in theta-phi
             tmp=[]
-            for i in range(NO2):
-#### CHANGES
+            for i in range(prm.NO2):
+
                 fintrp    = interpolate.RectBivariateSpline(p,t,var_rintrp[:,:,i],kx=1,ky=1) 
 #                fintrp    = interpolate.RectBivariateSpline(p,-cos(t),var_rintrp[:,:,i],kx=1,ky=1) 
+
                 tmp.append(fintrp(Pc[:,0,0],Tc[0,:,0]))
 #                tmp.append(fintrp(Pc[:,0,0],-cos(Tc[0,:,0])))
             vars['lfm'][var_name] = dstack(tmp)
@@ -173,8 +169,7 @@ for timeLabel in timeLabels:
             # finally interpolate bt and bp to the corresponding faces
             if var_name in ['bt','bp']:
                 tmp=[]
-                for i in range(NO2):
-#### CHANGES
+                for i in range(prm.NO2):
                     fintrp    = interpolate.RectBivariateSpline(p,t,var_rintrp[:,:,i],kx=1,ky=1) 
 #                    fintrp    = interpolate.RectBivariateSpline(p,-cos(t),var_rintrp[:,:,i],kx=1,ky=1) 
                     if var_name == 'bt':
@@ -193,10 +188,8 @@ for timeLabel in timeLabels:
         bt = vars['lfm']['bt']
         bp = vars['lfm']['bp']
 
-        if masFakeRotation:
-#            bp += -2*pi/(Tsolar*24.*3600.)*rcg*scale*sin(Tc[:,:,[0]])*br/vr
-#            bp = -2*pi/(Tsolar*24.*3600.)*rcg*scale*sin(Tc[:,:,[0]])*br/vr
-            bp += -2*pi/(Tsolar*24.*3600.)*rcg[0]*scale*sin(Tc[:,:,[0]])*br[:,:,[0]]/vr[:,:,[0]]
+        if prm.masFakeRotation:
+            bp += -2*pi/(prm.Tsolar*24.*3600.)*rcg[0]*sin(Tc[:,:,[0]])*br[:,:,[0]]/vr[:,:,[0]]
 
         # note, we're just aliasing the vars here for brevity (should
         # just eliminate the cartesian components altogether because
@@ -209,16 +202,16 @@ for timeLabel in timeLabels:
 
         rho  = vars['lfm']['rho']
         temp = vars['lfm']['t']
-        cs = sqrt(gamma*1.38e-23*temp/1.67e-27)*1.e2   # in cm/s
+        cs = sqrt(prm.gamma*1.38e-23*temp/1.67e-27)*1.e2   # in cm/s
 
         bp = vars['lfm']['bp_face']
         bt = vars['lfm']['bt_face']
 
-        if masFakeRotation:
+        if prm.masFakeRotation:
             # need to shift Br and Vr to the k-face to add extra Bphi
             # the good news is that we deal with LFM variables now
             # so everything is at least at the same r
-            for i in range(NO2):
+            for i in range(prm.NO2):
 ##### CHANGES
 ##########                fbr = interpolate.RectBivariateSpline(Pc[:,0,0],Tc[0,:,0],br[:nk,:nj,i])
 ##########                fvr = interpolate.RectBivariateSpline(Pc[:,0,0],Tc[0,:,0],vr[:nk,:nj,i])
@@ -232,13 +225,13 @@ for timeLabel in timeLabels:
 #                vr_bp_face = fvr(P[:,0,0],-cos(Tc[0,:,0]))
 #                bp[:-1,:,i] += -2*pi/(Tsolar*24.*3600.)*rcg[i]*scale*sin(Tc[:,:,0])*br_bp_face[:-1,:]/vr_bp_face[:-1,:]
 ##########                bp[:-1,:,i] = -2*pi/(Tsolar*24.*3600.)*rcg[i]*scale*sin(Tc[:,:,0])*br_bp_face[:-1,:]/vr_bp_face[:-1,:]
-                bp[:-1,:,i] += -2*pi/(Tsolar*24.*3600.)*rcg[0]*scale*sin(Tc[:,:,0])*br_bp_face[:-1,:]/vr_bp_face[:-1,:]
+                bp[:-1,:,i] += -2*pi/(prm.Tsolar*24.*3600.)*rcg[0]*sin(Tc[:,:,0])*br_bp_face[:-1,:]/vr_bp_face[:-1,:]
 
 #        bt=zeros_like(bt)
 #        by=zeros_like(by)
 #        vy=zeros_like(vy)
 #        vz=zeros_like(vz)
-        for i in range(NO2):
+        for i in range(prm.NO2):
             # note, by indexing below, we're making sure we are dumping arrays with shape (nk,nj)
             # instead of thinking whether they are already of this size
             out = array([ bt[:nk,:nj,i].T.ravel(),
@@ -251,8 +244,9 @@ for timeLabel in timeLabels:
                           vz[:nk,:nj,i].T.ravel(),
                           rho[:nk,:nj,i].T.ravel(),
                           cs[:nk,:nj,i].T.ravel()])
-                  
-            savetxt(os.path.join(masdir,'innerbc_%03d_%d.dat'%(timeLabel,i)),out.T,
+
+            # Note we always start with 0 in the timelabel; may need to be changed.                  
+            savetxt(os.path.join(prm.dirInitLFMfile,'innerbc_%03d_%d.dat'%(timeLabel-timeLabels[0]+1,i)),out.T,
                     fmt=['%13.8f','%13.8f','%13.8f','%13.8f','%13.8f',
                          '%15.5e','%15.5e','%15.5e',
                          '%14.5e','%14.5e'],

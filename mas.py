@@ -17,7 +17,7 @@ def read_var(fname,varname):
     var   = f.select('Data-Set-2')[:]
     f.end()
 
-    return(phi,theta,r,var*units[varname])
+    return(phi,theta,r*units['length'],var*units[varname])
 
 def time_unit():
     return(units['time'])

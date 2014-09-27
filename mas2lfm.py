@@ -33,22 +33,11 @@ else:
 
 vars={}
 vars['mas']={}
-mas_var_names = ['t','rho','vt','vp','vr','bt','bp','br']
-mas_var_units = ['temperature','mass density',
-                 'velocity','velocity','velocity',
-                 'magnetic field','magnetic field','magnetic field']
-for var_name in mas_var_names: vars['mas'][var_name]={}
-
 
 for timeLabel in timeLabels:
     print('MAS time label: %d'%timeLabel)
     ######## READ IN MAS DATA #####################
-    for var_name,var_unit in zip(mas_var_names,mas_var_units):
-        (vars['mas'][var_name]['phi'],
-         vars['mas'][var_name]['theta'],
-         vars['mas'][var_name]['r'],
-         vars['mas'][var_name]['data']) = mas.read_var(os.path.join(prm.masdir,var_name+'%03d.hdf'%timeLabel),var_unit)
-
+    vars['mas'] = mas.read_all_vars(prm.masdir,timeLabel)
 
     # We only assume here that the LFM bottom boundary coincides with the shell where MAS br is defined. 
     # We don't have to do this: could define rmin arbitrarily and then linearly interpolate.
@@ -88,7 +77,7 @@ for timeLabel in timeLabels:
 
 
         # interpolate in radius (get coefficients here)
-        for var_name in mas_var_names:
+        for var_name in vars['mas']:
             mas2lfm.util.radial_interp(vars['mas'],var_name,rcg)
 
         # we also need to interpolate br to i-faces !!! 092514 VGM:
@@ -144,7 +133,7 @@ for timeLabel in timeLabels:
         vars['lfm']={}
 
         # some aliases
-        for var_name in mas_var_names:
+        for var_name in vars['mas']:
             var = vars['mas'][var_name]['data']
             r  = vars['mas'][var_name]['r']
             p  = vars['mas'][var_name]['phi']

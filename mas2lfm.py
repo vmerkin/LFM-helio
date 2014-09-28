@@ -23,7 +23,6 @@ args = parser.parse_args()
 prm = mas2lfm.params.params(args.ConfigFileName)
 (ni,nj,nk) = (prm.ni,prm.nj,prm.nk)
 
-
 if prm.masTimeLabel=='all':
     timeLabels = [int(os.path.basename(s).split('.')[0][-3:]) for s in sorted(glob.glob(os.path.join(prm.masdir,'rho*.hdf')))]
 else:
@@ -33,6 +32,7 @@ else:
 
 vars={}
 vars['mas']={}
+interp={}
 
 for timeLabel in timeLabels:
     print('MAS time label: %d'%timeLabel)
@@ -78,7 +78,9 @@ for timeLabel in timeLabels:
 
         # interpolate in radius (get coefficients here)
         for var_name in vars['mas']:
-            mas2lfm.util.radial_interp(vars['mas'],var_name,rcg)
+            interp[var_name]={};
+            interp[var_name]['r']=vars['mas'][var_name]['r']
+            mas2lfm.util.radial_interp(interp,var_name,rcg)
 
         # we also need to interpolate br to i-faces !!! 092514 VGM:
         #                                               no, we don't, since LFM bottom coincides
@@ -138,8 +140,8 @@ for timeLabel in timeLabels:
             r  = vars['mas'][var_name]['r']
             p  = vars['mas'][var_name]['phi']
             t  = vars['mas'][var_name]['theta']
-            ind_a  = vars['mas'][var_name]['r_interp_above_ind']
-            q      = vars['mas'][var_name]['r_interp_coefs']
+            ind_a  = interp[var_name]['r_interp_above_ind']
+            q      = interp[var_name]['r_interp_coefs']
 
             # interpolate lineary in the radial direction
             var_rintrp = (1.-q)*var[:,:,ind_a]+q*var[:,:,ind_a-1]

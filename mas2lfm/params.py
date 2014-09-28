@@ -20,10 +20,16 @@ class params():
         self.NO2   = config.getint('Constants','NO2')
         self.Tsolar = config.getfloat('Constants','Tsolar')
         
-        self.masdir = config.get('MAS','masdir')
-        self.masTimeLabel = config.get('MAS','masTimeLabel')
-        self.masFrame = config.get('MAS','masFrame')
-        self.masFakeRotation = config.getboolean('MAS','masFakeRotation')
+        if config.has_section('MAS'):
+            self.masdir = config.get('MAS','masdir')
+            self.masTimeLabel = config.get('MAS','masTimeLabel')
+            self.masFrame = config.get('MAS','masFrame')
+            self.masFakeRotation = config.getboolean('MAS','masFakeRotation')
+
+        if config.has_section('WSA'):
+            self.wsaFile = config.get('WSA','wsafile')
+            self.gaussSmoothWidth = config.getint('WSA','gauss_smooth_width')
+
 
         self.dumpInit = config.getboolean('DUMPS','init')
         self.dumpBC   = config.getboolean('DUMPS','BC')

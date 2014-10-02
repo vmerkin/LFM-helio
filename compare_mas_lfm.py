@@ -69,7 +69,6 @@ btheta = bx[0,:,:]*cos(phi)*cos(theta) + by[0,:,:]*sin(phi)*cos(theta) - bz[0,:,
 bphi   =-bx[0,:,:]*sin(phi)            + by[0,:,:]*cos(phi)
 
 vr     = vx[0,:,:]*cos(phi)*sin(theta) + vy[0,:,:]*sin(phi)*sin(theta) + vz[0,:,:]*cos(theta)
-vtheta = vx[0,:,:]*cos(phi)*cos(theta) + vy[0,:,:]*sin(phi)*cos(theta) - vz[0,:,:]*sin(theta)
 vphi   =-vx[0,:,:]*sin(phi)            + vy[0,:,:]*cos(phi)
 
 
@@ -80,7 +79,7 @@ vphi   =-vx[0,:,:]*sin(phi)            + vy[0,:,:]*cos(phi)
  vars['lfm']['vt'],
  vars['lfm']['vr'],
  vars['lfm']['rho'],
- vars['lfm']['c']) = (bphi,btheta,br,vphi,vtheta,vr,rho[0,:,:],c[0,:,:])
+ vars['lfm']['c']) = (bphi,btheta,br,vphi,vtheta,vr,rho[kslice,:,:],c[kslice,:,:])
 
 vars['lfm']['t'] =  vars['lfm']['c']**2/gam*1.67e-8/1.38
 #############################
@@ -88,8 +87,6 @@ vars['lfm']['t'] =  vars['lfm']['c']**2/gam*1.67e-8/1.38
 
 #############################
 vars['mas'] = mas.read_all_vars(masdir,time_label)
-vars['mas']['bt']['lims'] = -5.e-8,5.e-8
-vars['mas']['bp']['lims'] = -5.e-8,5.e-8
 vars['mas']['br']['lims'] = -1.e-3,1.e-3
 vars['mas']['vr']['lims'] = 3.e7,4.e7
 vars['mas']['vt']['lims'] = -2.e6,2.e6

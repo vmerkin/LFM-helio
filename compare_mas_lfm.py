@@ -1,10 +1,17 @@
 ###########################
-masdir = '/Users/merkivg1/work/LFM-helio_2.0/PSI/Polytropic_run/tdmpoly01R'
+masdir = '/Users/merkivg1/work/LFM-helio_2.0/PSI/Polytropic_run/tdmpoly01f'
+#masdir = '/Users/merkivg1/work/LFM-helio_2.0/PSI/parker01'
 #lfmfile = './mas2lfm_106x96x128_mhd_0003000.hdf'
-lfmfile = '/Users/merkivg1/work/LFM-helio_2.0/PSI/results/CME/mas2lfm_tdmpoly01R_012_mhd_0003000.hdf'
-Rslice = 30.
+#lfmfile = '/Users/merkivg1/work/LFM-helio_2.0/PSI/results/CME/mas2lfm_tdmpoly01R_012_mhd_0003000.hdf'
+#lfmfile = './mas2lfm_parker_106x96x128_tx2_mhd_0003000.hdf'
+#lfmfile = './mas2lfm_parker_106x96x128_tx2_gravity_mhd_0003000.hdf'
+#lfmfile = './new_relaxed/mas2lfm_106x96x128_tx2_gravity_mhd_0003000.hdf'
+lfmfile = './mas2lfm_106x192x256_mhd_0005560.hdf'
+#lfmfile = './mas2lfm_106x96x128_tx2_gravity_mhd_0004320.hdf'
+kslice=60
 variable = 'br'
-time_label = 12
+time_label = 251
+#time_label = 7
 gam = 1.05
 ###########################
 
@@ -58,18 +65,17 @@ z=0.125*( z[:-1,:-1,:-1]+z[1:,:-1,:-1]+z[:-1,1:,:-1]+z[:-1,:-1,1:]+
 
 R=sqrt(x**2+y**2+z**2)
 
-#lfm_islice = flatnonzero(R[0,0,:]>=Rslice)[0]
-
-theta=arccos(z[0,:,:]/R[0,:,:])
-phi=arctan2(y[0,:,:],x[0,:,:])
+theta=arccos(z[kslice,:,:]/R[kslice,:,:])
+phi=arctan2(y[kslice,:,:],x[kslice,:,:])
 phi[phi<0]+=2*pi
 
-br     = bx[0,:,:]*cos(phi)*sin(theta) + by[0,:,:]*sin(phi)*sin(theta) + bz[0,:,:]*cos(theta)
-btheta = bx[0,:,:]*cos(phi)*cos(theta) + by[0,:,:]*sin(phi)*cos(theta) - bz[0,:,:]*sin(theta)
-bphi   =-bx[0,:,:]*sin(phi)            + by[0,:,:]*cos(phi)
+br     = bx[kslice,:,:]*cos(phi)*sin(theta) + by[kslice,:,:]*sin(phi)*sin(theta) + bz[kslice,:,:]*cos(theta)
+btheta = bx[kslice,:,:]*cos(phi)*cos(theta) + by[kslice,:,:]*sin(phi)*cos(theta) - bz[kslice,:,:]*sin(theta)
+bphi   =-bx[kslice,:,:]*sin(phi)            + by[kslice,:,:]*cos(phi)
 
-vr     = vx[0,:,:]*cos(phi)*sin(theta) + vy[0,:,:]*sin(phi)*sin(theta) + vz[0,:,:]*cos(theta)
-vphi   =-vx[0,:,:]*sin(phi)            + vy[0,:,:]*cos(phi)
+vr     = vx[kslice,:,:]*cos(phi)*sin(theta) + vy[kslice,:,:]*sin(phi)*sin(theta) + vz[kslice,:,:]*cos(theta)
+vtheta = vx[kslice,:,:]*cos(phi)*cos(theta) + vy[kslice,:,:]*sin(phi)*cos(theta) - vz[kslice,:,:]*sin(theta)
+vphi   =-vx[kslice,:,:]*sin(phi)            + vy[kslice,:,:]*cos(phi)
 
 
 (vars['lfm']['bp'],
@@ -87,7 +93,9 @@ vars['lfm']['t'] =  vars['lfm']['c']**2/gam*1.67e-8/1.38
 
 #############################
 vars['mas'] = mas.read_all_vars(masdir,time_label)
-vars['mas']['br']['lims'] = -1.e-3,1.e-3
+vars['mas']['bt']['lims'] = -1.e-3,1.e-3
+vars['mas']['bp']['lims'] = -1.e-3,1.e-3
+vars['mas']['br']['lims'] = -2.e-3,2.e-3
 vars['mas']['vr']['lims'] = 3.e7,4.e7
 vars['mas']['vt']['lims'] = -2.e6,2.e6
 vars['mas']['vp']['lims'] = -2.e6,2.e6
@@ -103,14 +111,16 @@ vars['mas']['vp']['fmt'] = '%.4e'
 vars['mas']['rho']['fmt'] = '%.4e'
 vars['mas']['t']['fmt'] = '%.4e'
 
-#mas_islice = flatnonzero(vars['mas'][variable]['r']>=Rslice)[0]
 #############################
+
+nk=x.shape[0]
+mas_kslice=where(vars['mas'][variable]['phi']>=float(kslice)/nk*2.*pi)[0][0]
 
 # interpolate MAS onto LFM grid
 f=interpolate.RectBivariateSpline(vars['mas'][variable]['theta'],
                                   vars['mas'][variable]['r']/6.96e10,
-                                  vars['mas'][variable]['data'][0,:,:],kx=1,ky=1)
-mas_interp=f(theta[:,0],R[0,0,:])
+                                  vars['mas'][variable]['data'][mas_kslice,:,:],kx=1,ky=1)
+mas_interp=f(theta[:,0],R[mas_kslice,0,:])
 
 #############################
 ###### PLOTTING ######
@@ -122,19 +132,19 @@ fmt = vars['mas'][variable]['fmt']
 
 ax1 = plt.subplot(311)
 
-p1=ax1.pcolormesh(R[0,:,:],pi-theta,mas_interp,vmin=vmin,vmax=vmax)
+p1=ax1.pcolormesh(R[kslice,:,:],pi-theta,mas_interp,vmin=vmin,vmax=vmax)
 ax1.xaxis.set_visible(False)
 ax1.set_title( ('MAS: Min/Max = '+fmt+'/'+fmt) % 
                (mas_interp.min(),mas_interp.max()))
 
 ax2 = plt.subplot(312)
-p2 = ax2.pcolormesh(R[0,:,:],pi-theta,vars['lfm'][variable],vmin=vmin,vmax=vmax)
+p2 = ax2.pcolormesh(R[kslice,:,:],pi-theta,vars['lfm'][variable],vmin=vmin,vmax=vmax)
 ax2.xaxis.set_visible(False)
 ax2.set_title( ('LFM: Min/Max = '+fmt+'/'+fmt) % 
                (vars['lfm'][variable].min(),vars['lfm'][variable].max()))
 
 ax3 = plt.subplot(313)
-p3 = ax3.pcolormesh(R[0,:,:],pi-theta,vars['lfm'][variable]/mas_interp-1,vmin=-0.05,vmax=0.05,cmap=cm.RdBu_r)
+p3 = ax3.pcolormesh(R[kslice,:,:],pi-theta,vars['lfm'][variable]/mas_interp-1,vmin=-0.05,vmax=0.05,cmap=cm.RdBu_r)
 ax3.set_xlabel('R')
 
 ax3.set_title( ('Ratio-1: Min/Max = '+fmt+'/'+fmt) % 

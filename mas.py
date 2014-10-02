@@ -31,7 +31,7 @@ def units():
     return(mas_units)
 
 
-def read_all_vars(dir,timeLabel):
+def read_all_vars(dir,timeLabel,normalized=False):
     mas_var_names = ['t','rho','vt','vp','vr','bt','bp','br']
 
     vars = {}
@@ -41,7 +41,7 @@ def read_all_vars(dir,timeLabel):
         (vars[var_name]['phi'],
          vars[var_name]['theta'],
          vars[var_name]['r'],
-         vars[var_name]['data']) = read_var(os.path.join(dir,var_name+'%03d.hdf'%timeLabel),var_name)
+         vars[var_name]['data']) = read_var(os.path.join(dir,var_name+'%03d.hdf'%timeLabel),var_name,normalized)
 
     return(vars)
 

@@ -193,7 +193,7 @@ for timeLabel in timeLabels:
 
         rho  = vars['lfm']['rho']
         temp = vars['lfm']['t']
-        cs = sqrt(prm.gamma*1.38e-23*temp/1.67e-27)*1.e2   # in cm/s
+        cs = sqrt(prm.gamma*1.38e-23*temp*2./1.67e-27)*1.e2   # in cm/s
 
         bp = vars['lfm']['bp_face']
         bt = vars['lfm']['bt_face']

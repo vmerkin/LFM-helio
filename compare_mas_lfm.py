@@ -8,6 +8,7 @@ masdir = '/Users/merkivg1/work/LFM-helio_2.0/PSI/Polytropic_run/tdmpoly01f'
 #lfmfile = './new_relaxed/mas2lfm_106x96x128_tx2_gravity_mhd_0003000.hdf'
 lfmfile = './mas2lfm_106x192x256_mhd_0005560.hdf'
 #lfmfile = './mas2lfm_106x96x128_tx2_gravity_mhd_0004320.hdf'
+lfmfile = '/Users/merkivg1/work/LFM-helio_2.0/PSI/mas2lfm_helio_g105.hdf'
 kslice=60
 variable = 'br'
 time_label = 251
@@ -93,24 +94,7 @@ vars['lfm']['t'] =  vars['lfm']['c']**2/gam*1.67e-8/1.38
 
 #############################
 vars['mas'] = mas.read_all_vars(masdir,time_label)
-vars['mas']['bt']['lims'] = -1.e-3,1.e-3
-vars['mas']['bp']['lims'] = -1.e-3,1.e-3
-vars['mas']['br']['lims'] = -2.e-3,2.e-3
-vars['mas']['vr']['lims'] = 3.e7,4.e7
-vars['mas']['vt']['lims'] = -2.e6,2.e6
-vars['mas']['vp']['lims'] = -2.e6,2.e6
-vars['mas']['rho']['lims'] = 5.e-21,1.e-20
-vars['mas']['t']['lims'] = 9.7e5,1.05e6
-
-vars['mas']['bt']['fmt'] = '%.8f'
-vars['mas']['bp']['fmt'] = '%.8f'
-vars['mas']['br']['fmt'] = '%.4f'
-vars['mas']['vr']['fmt'] = '%.4e'
-vars['mas']['vt']['fmt'] = '%.4e'
-vars['mas']['vp']['fmt'] = '%.4e'
-vars['mas']['rho']['fmt'] = '%.4e'
-vars['mas']['t']['fmt'] = '%.4e'
-
+mas.set_plot_limits(vars['mas'],'ConfigScripts/plot.config')
 #############################
 
 nk=x.shape[0]

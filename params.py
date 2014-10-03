@@ -1,6 +1,7 @@
+import ConfigParser
+
 class params():
     def __init__(self,ConfigFileName):
-        import ConfigParser
         config = ConfigParser.ConfigParser()
         config.read(ConfigFileName)
         
@@ -33,3 +34,4 @@ class params():
 
         self.dumpInit = config.getboolean('DUMPS','init')
         self.dumpBC   = config.getboolean('DUMPS','BC')
+

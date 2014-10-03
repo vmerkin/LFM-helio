@@ -9,7 +9,7 @@ from numpy import linspace,pi,meshgrid,sin,cos,zeros,ones,dstack,diff,sqrt,array
 from scipy import interpolate
 import time
 import pyLTR
-import mas2lfm
+import params,util
 
 
 #----------- PARSE ARGUMENTS ---------#
@@ -20,7 +20,7 @@ args = parser.parse_args()
 #----------- PARSE ARGUMENTS ---------#
 
 # Read params from config file
-prm = mas2lfm.params.params(args.ConfigFileName)
+prm = params.params(args.ConfigFileName)
 (ni,nj,nk) = (prm.ni,prm.nj,prm.nk)
 
 if prm.masTimeLabel=='all':
@@ -80,7 +80,7 @@ for timeLabel in timeLabels:
         for var_name in vars['mas']:
             interp[var_name]={};
             interp[var_name]['r']=vars['mas'][var_name]['r']
-            mas2lfm.util.radial_interp(interp,var_name,rcg)
+            util.radial_interp(interp,var_name,rcg)
 
         # we also need to interpolate br to i-faces !!! 092514 VGM:
         #                                               no, we don't, since LFM bottom coincides

@@ -8,3 +8,7 @@
 *.dat
 
 *.gz
+
+ConfigScripts/startup.config
+
+*.config~

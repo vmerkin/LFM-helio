@@ -1,14 +1,4 @@
 
-*.pyc
-
-*.py~
-
-*.hdf
-
-*.dat
-
-*.gz
-
-ConfigScripts/startup.config
-
 *.config~
+
+*.pyc

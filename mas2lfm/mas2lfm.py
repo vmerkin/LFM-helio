@@ -9,6 +9,7 @@ from numpy import linspace,pi,meshgrid,sin,cos,zeros,ones,dstack,diff,sqrt,array
 from scipy import interpolate
 import time
 import pyLTR
+sys.path.append('../lib')
 import params,util
 
 

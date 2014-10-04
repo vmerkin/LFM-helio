@@ -4,13 +4,14 @@ Here I'm going to try to keep things clean and modular.
 """
 
 import os,sys,glob
-import mas
+
 from numpy import linspace,pi,meshgrid,sin,cos,zeros,ones,dstack,diff,sqrt,array,savetxt,flatnonzero,insert,asarray,zeros_like
 from scipy import interpolate
 import time
 import pyLTR
 sys.path.append('../lib')
-import params,util
+import util,mas
+import mas2lfm
 
 
 #----------- PARSE ARGUMENTS ---------#
@@ -21,7 +22,7 @@ args = parser.parse_args()
 #----------- PARSE ARGUMENTS ---------#
 
 # Read params from config file
-prm = params.params(args.ConfigFileName)
+prm = mas2lfm.params.params(args.ConfigFileName)
 (ni,nj,nk) = (prm.ni,prm.nj,prm.nk)
 
 if prm.masTimeLabel=='all':

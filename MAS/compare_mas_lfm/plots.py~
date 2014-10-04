@@ -1,0 +1,76 @@
+from matplotlib import pyplot as plt
+from matplotlib import cm as cm
+
+#############################
+###### PLOTTING ######
+#############################
+fig = plt.figure(figsize = (18,16))
+
+vmin,vmax = vars['mas'][variable]['lims']
+fmt = vars['mas'][variable]['fmt']
+
+ax1 = plt.subplot(311)
+
+p1=ax1.pcolormesh(R[kslice,:,:],pi-theta,mas_interp,vmin=vmin,vmax=vmax)
+ax1.xaxis.set_visible(False)
+ax1.set_title( ('MAS: Min/Max = '+fmt+'/'+fmt) % 
+               (mas_interp.min(),mas_interp.max()))
+
+ax2 = plt.subplot(312)
+p2 = ax2.pcolormesh(R[kslice,:,:],pi-theta,vars['lfm'][variable],vmin=vmin,vmax=vmax)
+ax2.xaxis.set_visible(False)
+ax2.set_title( ('LFM: Min/Max = '+fmt+'/'+fmt) % 
+               (vars['lfm'][variable].min(),vars['lfm'][variable].max()))
+
+ax3 = plt.subplot(313)
+p3 = ax3.pcolormesh(R[kslice,:,:],pi-theta,vars['lfm'][variable]/mas_interp-1,vmin=-0.05,vmax=0.05,cmap=cm.RdBu_r)
+ax3.set_xlabel('R')
+
+ax3.set_title( ('Ratio-1: Min/Max = '+fmt+'/'+fmt) % 
+               ((vars['lfm'][variable]/mas_interp-1).min(),(vars['lfm'][variable]/mas_interp-1).max()))
+
+
+
+for (ax,p) in zip([ax1,ax2,ax3],[p1,p2,p3]):
+    ax.set_xlim(20,50)
+    ax.set_ylim(0,pi)
+    ax.set_ylabel(r'$\theta$')
+    plt.colorbar(p,ax=ax).set_label(variable)
+
+
+
+
+plt.show()
+
+    
+#############################
+###### PLOTTING ######
+#############################
+fig = plt.figure(figsize = (18,16))
+
+vmin,vmax = vars['mas'][variable]['lims']
+fmt = vars['mas'][variable]['fmt']
+
+ax1 = plt.subplot(211)
+
+p1=ax1.pcolormesh(vars['lfm']['R'][0,:,:]/6.96e10,pi-vars['lfm']['theta'][0,:,:],mas_interp,vmin=vmin,vmax=vmax)
+ax1.xaxis.set_visible(False)
+ax1.set_title( ('MAS: Min/Max = '+fmt+'/'+fmt) % 
+               (mas_interp.min(),mas_interp.max()))
+
+ax2 = plt.subplot(212)
+p2 = ax2.pcolormesh(vars['lfm']['R'][0,:,:]/6.96e10,pi-vars['lfm']['theta'][0,:,:],vars['lfm'][variable][0,:,:],vmin=vmin,vmax=vmax)
+ax2.set_xlabel('R')
+ax2.set_title( ('LFM: Min/Max = '+fmt+'/'+fmt) % 
+               (vars['lfm'][variable].min(),vars['lfm'][variable].max()))
+
+
+
+for ax in [ax1,ax2]:
+    ax.set_xlim(20,50)
+    ax.set_ylim(0,pi)
+    ax.set_ylabel(r'$\theta$')
+    plt.colorbar(p1,ax=ax).set_label(variable)
+
+plt.show()
+

@@ -1,6 +1,8 @@
-from pylab import * #sqrt,pcolor,figure
+from pyhdf.SD import SD, SDC
+from numpy import sqrt,arccos,arctan2,cos,sin,pi
+
 def read(filename):
-    from pyhdf.SD import SD, SDC
+
 
     hdffile = SD(filename,SDC.READ)
 

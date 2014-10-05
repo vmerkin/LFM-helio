@@ -2,3 +2,9 @@
 *.config~
 
 *.pyc
+
+*.dat
+
+*.py~
+
+*.hdf

@@ -2,7 +2,9 @@ from pyhdf.SD import SD, SDC
 from numpy import sqrt,arccos,arctan2,cos,sin,pi
 
 def read(filename):
-
+    """
+    Returns R,theta,phi,Rc,thetac,phic,br,btheta,bphi,vr,vtheta,vphi,rho,cs
+    """
 
     hdffile = SD(filename,SDC.READ)
 

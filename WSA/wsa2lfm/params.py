@@ -32,6 +32,7 @@ class params():
             self.gaussSmoothWidth = config.getint('WSA','gauss_smooth_width')
             self.plots = config.getboolean('WSA','plots')
             self.densTempInfile = config.getboolean('WSA','density_temperature_infile')
+            self.normalized = config.getboolean('WSA','normalized')
 
 
         self.dumpInit = config.getboolean('DUMPS','init')

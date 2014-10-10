@@ -28,6 +28,6 @@ def read(wsa_file,densTempInfile,normalized=False):
     hdulist.close()
 
     if normalized:
-        return(phi_wsa_v,theta_wsa_v,phi_wsa_c,theta_wsa_c,bi_wsa,v_wsa,n_wsa,T_wsa)
+        return(phi_wsa_v,theta_wsa_v,phi_wsa_c,theta_wsa_c,bi_wsa,v_wsa,n_wsa*1.67e-24,T_wsa)
     else:
         return(phi_wsa_v,theta_wsa_v,phi_wsa_c,theta_wsa_c,bi_wsa*1.e-5,v_wsa*1.e5,n_wsa*1.67e-24,T_wsa)

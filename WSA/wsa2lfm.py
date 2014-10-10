@@ -21,7 +21,7 @@ gamma = prm.gamma
 
 
 ############### WSA STUFF #####################
-phi_wsa_v,theta_wsa_v,phi_wsa_c,theta_wsa_c,bi_wsa,v_wsa,n_wsa,T_wsa = wsa.read(prm.wsaFile,prm.densTempInfile)
+phi_wsa_v,theta_wsa_v,phi_wsa_c,theta_wsa_c,bi_wsa,v_wsa,n_wsa,T_wsa = wsa.read(prm.wsaFile,prm.densTempInfile,prm.normalized)
 ############### WSA STUFF #####################
 
 ############### LFM STUFF #####################
@@ -113,6 +113,7 @@ if prm.dumpBC:
 
     bp_kface = -br_kface*2*pi/(prm.Tsolar*24.*3600.)*R[0,0,0]*sin(Tc[0,:,0])/vr_kface  # beautiful numpy broadcasting
     bp       = -br      *2*pi/(prm.Tsolar*24.*3600.)*R[0,0,0]*sin(Tc[0,:,0])/vr          
+    et   = -br_kface*2*pi/(prm.Tsolar*24.*3600.)*R[0,0,0]*sin(Tc[0,:,0])   # etheta electric field. Note, only defined in 2D
 
     # Scale inside ghost region
     (vr,rho,cs,br,bp,bp_kface) = [dstack(prm.NO2*[var]) for var in (vr,rho,cs,br,bp,bp_kface)]
@@ -130,6 +131,7 @@ if prm.dumpBC:
         # instead of thinking whether they are already of this size
         out = array([ bt[:nk,:nj,i].T.ravel(),              # Note, bt (1st column) is a place holder used only for tiem-dependent runs (should be bt_jface)
                       bp_kface[:nk,:nj,i].T.ravel(),        # the 1st two columns are used for e-field calculation; the next 3 for bx,by,bz calc in ghost region
+                      et[:nk,:nj].T.ravel(),
                       br[:nk,:nj,i].T.ravel(),
                       bt[:nk,:nj,i].T.ravel(),
                       bp[:nk,:nj,i].T.ravel(),
@@ -139,10 +141,11 @@ if prm.dumpBC:
                       rho[:nk,:nj,i].T.ravel(),
                       cs[:nk,:nj,i].T.ravel()])
                   
-        savetxt('innerbc_000_%d.dat'%i,out.T,
-                fmt=['%13.8f','%13.8f','%13.8f','%13.8f','%13.8f',
-                     '%15.5e','%15.5e','%15.5e',
-                     '%14.5e','%14.5e'],
+        savetxt('innerbc_001_%d.dat'%i,out.T,
+                # fmt=['%13.8f','%13.8f','%15.8f','%13.8f','%13.8f','%13.8f',
+                #      '%15.5e','%15.5e','%15.5e',
+                #      '%14.5e','%14.5e'],
+                fmt=['%15.5e']*11,
                 delimiter='')
 
 """

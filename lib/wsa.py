@@ -3,7 +3,8 @@ from numpy import linspace,pi,meshgrid,sin,cos,zeros,ones,dstack,diff,sqrt,array
 
 def read(wsa_file,densTempInfile,normalized=False):
     hdulist = pyfits.open(wsa_file)
-    print hdulist[0].header.cards
+
+    info(wsa_file)
     
     n_phi_wsa_v = hdulist[0].header['NAXIS1']+1  # number of cell vertices
     n_phi_wsa_c = hdulist[0].header['NAXIS1']    # number of cell centers
@@ -39,7 +40,10 @@ def read(wsa_file,densTempInfile,normalized=False):
 
 def info(wsa_file):
     hdulist = pyfits.open(wsa_file)
-    print hdulist[0].header.cards
+    if pyfits.__version__[:3]=='3.0':
+        print hdulist[0].header.ascardlist()
+    else:
+        print hdulist[0].header.cards
     hdulist.close()
 
 if __name__ == "__main__":

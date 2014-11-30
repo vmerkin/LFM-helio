@@ -29,12 +29,11 @@ def read(wsa_file,densTempInfile,normalized=False,verbose=True):
         n0 = n_wsa[unravel_index(argmin(abs(n_wsa-n0)),n_wsa.shape)]  # this is in cm^-3
 
         T_wsa = n0*T0/n_wsa
-"""
-The code below allows total pressure conservation in the non-radial
-direction: nT+B**2/8pi = n0*T0+B0**2/8pi. The unit conversion assumes
-B and B0 in nT (which they should be by now) and botzmann constant in the
-denominator.
-"""
+
+# The code below allows total pressure conservation in the non-radial
+# direction: nT+B**2/8pi = n0*T0+B0**2/8pi. The unit conversion assumes
+# B and B0 in nT (which they should be by now) and botzmann constant in the
+# denominator.
 #        T_wsa = n0*T0/n_wsa + (B0**2-bi_wsa**2)/1.38/8./pi*1.e6/n_wsa
     hdulist.close()
 

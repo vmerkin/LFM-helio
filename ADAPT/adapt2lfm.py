@@ -146,7 +146,7 @@ for (fcount,wsaFile) in enumerate(wsaFiles):
     # (nk,nj,ni), we have transposed the WSA arrays above so br by now
     # is (nk,nj)
     if fcount>0:
-        pois.setRHS( (br-br_save).T/prm.adaptCadence )
+        pois.setRHS( (br-br_save).T )
         guess=zeros_like(br.T)
         Psi = newton_krylov(pois.residual,guess, method='lgmres')#,f_rtol=1.e-6) #iter=100
         print('Residual: %g' % abs(pois.residual(Psi)).max())
@@ -310,7 +310,7 @@ for (fcount,wsaFile) in enumerate(wsaFiles):
                           rho[:nk,:nj,i].T.ravel(),
                           cs[:nk,:nj,i].T.ravel()])
                   
-            savetxt('innerbc_%03d_%d.dat'% (fcount+1,i),out.T,
+            savetxt(os.path.join(prm.dirInitLFMfile,'innerbc_%03d_%d.dat'% (fcount+1,i)),out.T,
                     # fmt=['%13.8f','%13.8f','%15.8f','%13.8f','%13.8f','%13.8f',
                     #      '%15.5e','%15.5e','%15.5e',
                     #      '%14.5e','%14.5e'],

@@ -167,8 +167,8 @@ for (fcount,wsaFile) in enumerate(wsaFiles):
         """
         ep_a=zeros((Psi.shape[0]+1,Psi.shape[1]))
         ep_a[1:-1,:] = -diff(Psi,axis=0)/diff(theta)[:,None]
-        ep_a[0,:]=0.
-        ep_a[-1,:]=0.
+        ep_a[0,:]=ep_a[1,:]   # used to set these to zero, but more appropriate to repeat from next theta, since Ephi does not depend on theta at the pole.
+        ep_a[-1,:]=ep_a[-2,:] # Ek(j=0,njp1) is set to zero anyway inside LFM (because edge length is zero)
 
         """
         OK, now we do the trick with e-field definition as a function
@@ -194,12 +194,15 @@ for (fcount,wsaFile) in enumerate(wsaFiles):
 #        et_save = 2*et_a - et_save
 #        ep_save = 2*ep_a - ep_save
 
-        ramp = lambda t: 0.5*(tanh(20/pi*(t-pi/10))-tanh(20/pi*(t-pi+pi/10)))
-        et_save = et_a*ramp(theta[:,None])
-        q=0.5*(theta[1:]+theta[:-1])
-        q=insert(q,0,0.)
-        q=append(q,pi)
-        ep_save = ep_a*ramp(q[:,None])
+        # ramp = lambda t: 0.5*(tanh(20/pi*(t-pi/10))-tanh(20/pi*(t-pi+pi/10)))
+        # et_save = et_a*ramp(theta[:,None])
+        # q=0.5*(theta[1:]+theta[:-1])
+        # q=insert(q,0,0.)
+        # q=append(q,pi)
+        # ep_save = ep_a*ramp(q[:,None])
+
+        et_save = et_a
+        ep_save = ep_a
 
     br_save = br
 

@@ -13,7 +13,7 @@ class poisson():
     def setRHS(self,RHS):
         self.RHS = RHS
 
-    def residual(self,P):
+    def residual_xsin2(self,P,lhs=False):
         dphi = self.dphi
         dtheta = self.dtheta
         theta = self.theta
@@ -27,47 +27,67 @@ class poisson():
         d2x[:,1:-1] = (P[:,2:] - 2*P[:,1:-1] + P[:,:-2]) /dphi**2
         d2y[1:-1,:] = (P[2:,:] - 2*P[1:-1,:] + P[:-2,:]) /dtheta**2*sin(theta[1:-1,None])**2
 
-        dy[1:-1,:] = 0.5*(P[2:,:] - P[:-2,:]) /dtheta*sin(theta[1:-1,None])*cos(theta[1:-1,None])
+        dy[1:-1,:] = 0.5*(P[2:,:] - P[:-2,:]) /dtheta*sin(theta[1:-1,None])*cos(theta[1:-1,None]) 
 
         # periodic boundary
         d2x[:,0]  = (P[:,1]-2*P[:,0]+P[:,-1]) /dphi**2
         d2x[:,-1] = (P[:,0]-2*P[:,-1]+P[:,-2]) /dphi**2
 
-        # poles, set to zero for now
-        k    = arange(nk)
-        kppi = (nk/2+k)%nk   # k on the opposite side (phi+pi, thus kppi, i.e. "k plus pi")
+        result = self.RHS*sin(theta[:,None])**2
 
-        ####################################################################################################
-        # FLIP AROUND AXIS -- INCORRECT TO USE IN SPHERICAL COORDINATES (NEED
-        # TO DO CALCULATIONS IN CARTESIAN FOR THIS TO BE VALID -- LIKE IN LFM
-        #
-        #    d2y[0,:] = (P[1,:]-2*P[0,:]+P[0,kppi]) /dtheta**2*sin(theta[0])**2
-        #    d2y[-1,:] = (P[-1,kppi]-2*P[-1,:]+P[-2,:]) /dtheta**2*sin(theta[-1])**2
-        #
-        #    dy[0,:] = 0.5*(P[1,:] - P[0,kppi]) /dtheta*sin(theta[0])*cos(theta[0])
-        #    dy[-1,:] = 0.5*(P[-1,kppi] - P[-2,:]) /dtheta*sin(theta[-1])*cos(theta[-1])
-        ####################################################################################################
+        # Pole boundary condition. Note, the below does not mean that d/dtheta=0 literally.
+        # We set sin(theta)*dPsi/dtheta=0 at the pole (see notes for details), 
+        # and d2y here represents 1/sin(theta)*d/dtheta (sin(theta)*dPsi/dtheta) in that approxiamtion.
+        # NOTE, BELOW ASSUMES CONSTANT SPACING IN THETA!!! (0.5 FACTOR IS BASED ON THAT).
+        dy[0,:]=0.
+        dy[-1,:]=0.
 
-        ####################################################################################################
-        # FIRST ORDER
-        d2y[0,:] = 0.
-        d2y[-1,:] = 0.
+        d2y[0,:] = 0.5*(P[1,:]-P[0,:])
+        d2y[-1,:] = -0.5*(P[-1,:]-P[-2,:])
 
-        dy[0,:] = P[0,:]*cos(theta[0])
-        dy[-1,:] = -P[-1,:]*cos(theta[-1])
         ###################################################################################################
+        if not lhs:
+            return d2x + d2y + dy - result
+        else:
+            return d2x + d2y + dy
 
-        ####################################################################################################
-        # SECOND ORDER
-        # d2y[0,:] = P[0,:]+P[0,kppi]
-        # d2y[-1,:] = P[-1,:]+P[-1,kppi]
-        
-        # dy[0,:] = 0.5*(3*P[0,:]+P[0,kppi])*cos(theta[0])
-        # dy[-1,:] = 0.5*(3*P[-1,:]+P[-1,kppi])*cos(theta[0])
-        ####################################################################################################
-        return d2x + d2y + dy - self.RHS*sin(theta[:,None])**2
+    def residual(self,P,lhs=False):
+        dphi = self.dphi
+        dtheta = self.dtheta
+        theta = self.theta
+        nk = self.nk
 
 
+        d2x = zeros_like(P)
+        d2y = zeros_like(P)
+        dy = zeros_like(P)
+
+        d2x[:,1:-1] = (P[:,2:] - 2*P[:,1:-1] + P[:,:-2]) /dphi**2/sin(theta[:,None])**2 
+        d2y[1:-1,:] = (P[2:,:] - 2*P[1:-1,:] + P[:-2,:]) /dtheta**2
+
+        dy[1:-1,:] = 0.5*(P[2:,:] - P[:-2,:]) /dtheta/sin(theta[1:-1,None])*cos(theta[1:-1,None])
+
+        # periodic boundary
+        d2x[:,0]  = (P[:,1]-2*P[:,0]+P[:,-1]) /dphi**2/sin(theta)**2 
+        d2x[:,-1] = (P[:,0]-2*P[:,-1]+P[:,-2]) /dphi**2/sin(theta)**2
+
+        result = self.RHS
+
+        # Pole boundary condition. Note, the below does not mean that d/dtheta=0 literally.
+        # We set sin(theta)*dPsi/dtheta=0 at the pole (see notes for details), 
+        # and d2y here represents 1/sin(theta)*d/dtheta (sin(theta)*dPsi/dtheta) in that approxiamtion.
+        # NOTE, BELOW ASSUMES CONSTANT SPACING IN THETA!!! (0.5 FACTOR IS BASED ON THAT).
+        dy[0,:]=0.
+        dy[-1,:]=0.
+
+        d2y[0,:] = 0.5*(P[1,:]-P[0,:])/sin(theta[0])**2   # Psin=0; 0.5*( 0.5*(P[1,:]+P[0,:]) - Psin)
+        d2y[-1,:] = -0.5*(P[-1,:]-P[-2,:])/sin(theta[-1])**2     #-0.5*( 0.5*(P[-2,:]+P[-1,:]) - P[-1,:].mean())
+
+        ###################################################################################################
+        if not lhs:
+            return d2x + d2y + dy - result
+        else:
+            return d2x + d2y + dy
 
 if __name__=='__main__':
     from scipy.optimize import newton_krylov,anderson

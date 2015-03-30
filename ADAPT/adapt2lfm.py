@@ -94,11 +94,13 @@ for (fcount,wsaFile) in enumerate(wsaFiles):
     f      = interpolate.RectBivariateSpline(phi_wsa_c,theta_wsa_c,n_wsa_rolled.T,kx=1,ky=1)  
     rho = f(Pc[:,0,0],Tc[0,:,0])
 
-    f      = interpolate.RectBivariateSpline(phi_wsa_c,theta_wsa_c,T_wsa_rolled.T,kx=1,ky=1)  
-    temp = f(Pc[:,0,0],Tc[0,:,0])
+    # f      = interpolate.RectBivariateSpline(phi_wsa_c,theta_wsa_c,T_wsa_rolled.T,kx=1,ky=1)  
+    # temp = f(Pc[:,0,0],Tc[0,:,0])
+    # cs = sqrt(prm.gamma*1.38e-23*temp/1.67e-27)*1.e2   # FIX ME. in cm/s
 
+    T0 = 0.5e6
+    cs = sqrt(prm.gamma/rho*(rho.max()*1.38e-16*T0/1.67e-24-br**2/8/pi))
 
-    cs = sqrt(prm.gamma*1.38e-23*temp/1.67e-27)*1.e2   # FIX ME. in cm/s
 
 
     if wsaFile == wsaFiles[0]:
@@ -148,7 +150,7 @@ for (fcount,wsaFile) in enumerate(wsaFiles):
     if fcount>0:
         pois.setRHS( (br-br_save).T )
         guess=zeros_like(br.T)
-        Psi = newton_krylov(pois.residual,guess, method='lgmres')#,f_rtol=1.e-6) #iter=100
+        Psi = newton_krylov(pois.residual,guess, method='lgmres',verbose=True,iter=100)#,f_rtol=1.e-6) #iter=100
         print('Residual: %g' % abs(pois.residual(Psi)).max())
 
 

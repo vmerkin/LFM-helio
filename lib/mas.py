@@ -1,5 +1,5 @@
 from pyhdf.SD import SD,SDC
-import os
+import os,sys
 import ConfigParser
 
 mas_units = {'length':6.96e10,
@@ -78,3 +78,61 @@ def set_plot_limits(v,plotConfigFile = 'plot.config'):
         v['t']['fmt'] = plotConfig.get('MAS','t_fmt')
     except KeyError:
         print('Some keys are missing from the variable dictionary.')
+
+
+def mas2h5(fname,vname):
+    from numpy import meshgrid,sin,cos
+
+    if vname not in mas_var_names: 
+        sys.exit('Wrong variable name')
+
+    fout = os.path.splitext(fname)[0]+'.h5'
+
+    import mas
+    phi,theta,r,var=mas.read_var(fname,vname)
+    import h5py
+    f=h5py.File(fout,'w')
+    P,T,R = meshgrid(phi,theta,r,indexing='ij')
+    x = R*sin(T)*cos(P)/mas_units['length']
+    y = R*sin(T)*sin(P)/mas_units['length']
+    z = R*cos(T)/mas_units['length']
+    f.create_dataset('x',data= x.astype(dtype='float32'))
+    f.create_dataset('y',data= y.astype(dtype='float32'))
+    f.create_dataset('z',data= z.astype(dtype='float32'))
+    f.create_dataset(vname,data= var.astype(dtype='float32'))
+    f.close()
+
+    # write xmf file
+    mas2xdmf(fout,vname,phi.size,theta.size,r.size)
+
+def mas2xdmf(h5name,varname,n1,n2,n3):
+    fname=os.path.splitext(h5name)[0]+'.xmf'
+    dsname = os.path.basename(h5name)
+
+    f = open(fname,'w')
+    f.write('<?xml version="1.0" ?>' + '\n'+
+            '<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>' + '\n'+
+            '<Xdmf Version="2.0">' + '\n'+
+            '  <Domain>' + '\n'+
+            '    <Grid Name="mesh1" GridType="Uniform">' + '\n'+
+            '      <Topology TopologyType="3DSMesh" NumberOfElements="%d %d %d"/>'%(n1,n2,n3) + '\n'+
+            '      <Geometry GeometryType="X_Y_Z">' + '\n'+
+            '        <DataItem Name="X" Dimensions="%d %d %d" NumberType="Float" Precision="4" Format="HDF">' %(n1,n2,n3)+ '\n'+
+            '          %s:/x'%dsname + '\n'+
+            '        </DataItem>' + '\n'+
+            '        <DataItem Name="Y" Dimensions="%d %d %d" NumberType="Float" Precision="4" Format="HDF">' %(n1,n2,n3)+ '\n'+
+            '          %s:/y'%dsname + '\n'+
+            '        </DataItem>' + '\n'+
+            '        <DataItem Name="Z" Dimensions="%d %d %d" NumberType="Float" Precision="4" Format="HDF">'%(n1,n2,n3) + '\n'+
+            '          %s:/z'%dsname + '\n'+
+            '        </DataItem>' + '\n'+
+            '      </Geometry>' + '\n'+
+            '      <Attribute Name="%s" AttributeType="Scalar" Center="Node">'%varname + '\n'+
+            '        <DataItem Dimensions="%d %d %d" NumberType="Float" Precision="4" Format="HDF">'%(n1,n2,n3) + '\n'+
+            '          %s:/%s'%(dsname,varname) + '\n'+
+            '        </DataItem>' + '\n'+
+            '      </Attribute>' + '\n'+
+            '    </Grid>' + '\n'+
+            '  </Domain>' + '\n'+
+            '</Xdmf>' )
+    f.close()

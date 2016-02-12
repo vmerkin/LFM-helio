@@ -1,6 +1,5 @@
 from pylab import *
 import glob,os,sys,datetime
-import summary
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -8,40 +7,19 @@ from matplotlib.dates import DateFormatter
 
 home = os.path.expanduser("~");
 if os.path.join(home,'GitHub/Python/LFM-helio/lib/') not in sys.path: sys.path.append(os.path.join(home,'GitHub/Python/LFM-helio/lib/'))
+if os.path.join(home,'GitHub/Python/LFM-helio/analysis/') not in sys.path: sys.path.append(os.path.join(home,'GitHub/Python/LFM-helio/analysis/'))
 import lfmhlib,ace,cspice
-
-####################################################################################################
-########### CR 2094 ################################################################################
-####################################################################################################
-"""
-lfmFileDir = '/glade/scratch/vgm/LFM-helio/ADAPT/2094rf'
-lfmFiles = sorted(glob.glob(os.path.join(lfmFileDir,'*v1*.hdf')))
-start_step = 25000
-#start_file = 'cr2094_192x96x192_v1_mhd_0025000.hdf'
-start_dati = datetime.datetime(2010,1,1,23,0,0)
-nk=192
-Omega = 2*pi/27.27/24./3600.
-
-# get ACE position
-ACE_dati,ACE_x,ACE_y,ACE_z,ACE_r,ACE_theta,ACE_phi=cspice.cspice('/glade/u/home/vgm/LFM-helio_2.0/SCDATA/Earth_cspice_HCI_position_2010_001_060')
-
-# get ACE data
-ACE_mf_time,ACE_bx,ACE_by,ACE_bz=ace.cdaweb_mfi('/glade/u/home/vgm/LFM-helio_2.0/SCDATA/ACE/2094/AC_H2_MFI_14914.txt')
-ACE_plasma_time,ACE_v,ACE_n=ace.cdaweb_swe('/glade/u/home/vgm/LFM-helio_2.0/SCDATA/ACE/2094/AC_H2_SWE_14914.txt')
-"""
-####################################################################################################
+import summary
 
 ####################################################################################################
 ########### CR 2066  ###############################################################################
 ####################################################################################################
-lfmFileDir = '/glade/scratch/vgm/LFM-helio/ADAPT/2066rf'
+lfmFileDir = '/glade/p/ujhb0003/LFM-helio/ADAPT/2066rf'
 lfmFiles = sorted(glob.glob(os.path.join(lfmFileDir,'*.hdf')))
 start_step = 25000
-#start_file = 'cr2094_192x96x192_v1_mhd_0025000.hdf'
 start_dati = datetime.datetime(2008,1,1,23,0,0)
 nk=192
 Omega = 2*pi/27.27/24./3600.
-
 
 # get ACE position
 ACE_dati,ACE_x,ACE_y,ACE_z,ACE_r,ACE_theta,ACE_phi=cspice.cspice('/glade/u/home/vgm/LFM-helio_2.0/SCDATA/ACE/Earth_cspice_HCI_position_2008_001_060')
@@ -49,34 +27,17 @@ ACE_dati,ACE_x,ACE_y,ACE_z,ACE_r,ACE_theta,ACE_phi=cspice.cspice('/glade/u/home/
 # get MSGR position
 MSGR_dati,MSGR_x,MSGR_y,MSGR_z,MSGR_r,MSGR_theta,MSGR_phi=cspice.cspice('/glade/u/home/vgm/LFM-helio_2.0/SCDATA/MSGR/MSGR_cspice_HCI_position_2008_001_060')
 
+# get STEREO A position
+STA_dati,STA_x,STA_y,STA_z,STA_r,STA_theta,STA_phi=cspice.cspice('/glade/u/home/vgm/LFM-helio_2.0/SCDATA/STEREO/STA_scpice_HCI_position_2008_001_060')
+
+# get STEREO B position
+STB_dati,STB_x,STB_y,STB_z,STB_r,STB_theta,STB_phi=cspice.cspice('/glade/u/home/vgm/LFM-helio_2.0/SCDATA/STEREO/STB_scpice_HCI_position_2008_001_060')
+
 # get ACE data
 ACE_mf_time,ACE_bx,ACE_by,ACE_bz=ace.cdaweb_mfi('/glade/u/home/vgm/LFM-helio_2.0/SCDATA/ACE/2066/AC_H2_MFI_20155.txt')
 ACE_plasma_time,ACE_v,ACE_n=ace.cdaweb_swe('/glade/u/home/vgm/LFM-helio_2.0/SCDATA/ACE/2066/AC_H2_SWE_20155.txt')
 ####################################################################################################
 
-####################################################################################################
-########### YEAR 2012###############################################################################
-####################################################################################################
-# lfmFileDir = '/glade/scratch/vgm/LFM-helio/ADAPT/2012rf'
-# lfmFiles = sorted(glob.glob(os.path.join(lfmFileDir,'*.hdf')))
-# start_step = 25000
-# #start_file = 'cr2094_192x96x192_v1_mhd_0025000.hdf'
-# start_dati = datetime.datetime(2012,2,15,0,0,0)
-# nk=192
-# Omega = 2*pi/27.27/24./3600.
-
-
-# # get ACE position
-# ACE_dati,ACE_x,ACE_y,ACE_z,ACE_r,ACE_theta,ACE_phi=cspice.cspice('/glade/u/home/vgm/LFM-helio_2.0/SCDATA/ACE/Earth_cspice_HCI_position_2012_001_120')
-
-# # get ACE data
-# ACE_mf_time,ACE_bx,ACE_by,ACE_bz=ace.cdaweb_mfi('/glade/u/home/vgm/LFM-helio_2.0/SCDATA/ACE/AC_H2_MFI_7837.txt')
-# ACE_plasma_time,ACE_v,ACE_n=ace.cdaweb_swe('/glade/u/home/vgm/LFM-helio_2.0/SCDATA/ACE/AC_H2_SWE_7837.txt')
-####################################################################################################
-
-
-
-#start_ind = lfmFiles.index(os.path.join(lfmFileDir,start_file))
 start_ind = [start_step==int(f[-11:-4]) for f in lfmFiles].index(True)
 dates = []
 vr = []
@@ -89,7 +50,7 @@ close('all')
 fig=plt.figure(figsize=(12,15))
 gs = gridspec.GridSpec(2,1,height_ratios=[6,4],hspace=0.2)
 gs1 = gridspec.GridSpecFromSubplotSpec(2,1,subplot_spec=gs[1],hspace=0.1)
-for i,f in enumerate(lfmFiles[start_ind:]):
+for i,f in enumerate(lfmFiles[start_ind:start_ind+1]):
     if i==0: 
         simtime0 = lfmhlib.get_time(f)
         R,theta,phi = lfmhlib.r_theta_phi_uniform(f)
